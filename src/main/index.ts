@@ -52,20 +52,32 @@ function createWindow() {
 
 app.setAppUserModelId('com.lekhak.app')
 
-app.whenReady().then(() => {
-  initDatabase()
-  const win = createWindow()
-  tray = initTray(win)
-  registerIpcHandlers()
-  initReminderScheduler(win)
-
-  ipcMain.on('window-minimize', () => mainWindow?.minimize())
-  ipcMain.on('window-maximize', () => {
-    if (mainWindow?.isMaximized()) mainWindow.unmaximize()
-    else mainWindow?.maximize()
+if (!app.requestSingleInstanceLock()) {
+  app.quit()
+} else {
+  app.on('second-instance', () => {
+    if (mainWindow) {
+      if (!mainWindow.isVisible()) mainWindow.show()
+      if (mainWindow.isMinimized()) mainWindow.restore()
+      mainWindow.focus()
+    }
   })
-  ipcMain.on('window-close', () => mainWindow?.hide())
-})
+
+  app.whenReady().then(() => {
+    initDatabase()
+    const win = createWindow()
+    tray = initTray(win)
+    registerIpcHandlers()
+    initReminderScheduler(win)
+
+    ipcMain.on('window-minimize', () => mainWindow?.minimize())
+    ipcMain.on('window-maximize', () => {
+      if (mainWindow?.isMaximized()) mainWindow.unmaximize()
+      else mainWindow?.maximize()
+    })
+    ipcMain.on('window-close', () => mainWindow?.hide())
+  })
+}
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
