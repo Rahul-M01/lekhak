@@ -1,6 +1,7 @@
-import { BrowserWindow } from 'electron'
-import { exec } from 'child_process'
+import { BrowserWindow, screen } from 'electron'
 import { getDb } from './database'
+
+const activeToasts = new Set<BrowserWindow>()
 
 export function initReminderScheduler(win: BrowserWindow) {
   setInterval(() => checkReminders(win), 30000)
@@ -8,36 +9,101 @@ export function initReminderScheduler(win: BrowserWindow) {
 }
 
 function showToast(title: string, body: string, onClick: () => void) {
-  // Use PowerShell Windows Runtime toast — works reliably in dev and prod
-  const safeTitle = title.replace(/'/g, '').replace(/"/g, '')
-  const safeBody = body.replace(/'/g, '').replace(/"/g, '')
+  const { width, height } = screen.getPrimaryDisplay().workAreaSize
+  const toastWidth = 340
+  const toastHeight = 90
+  
+  const toastWin = new BrowserWindow({
+    width: toastWidth,
+    height: toastHeight,
+    x: width - toastWidth - 20,
+    y: height - toastHeight - 60,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    resizable: false,
+    focusable: false,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true
+    }
+  })
+  
+  activeToasts.add(toastWin)
+  toastWin.on('closed', () => activeToasts.delete(toastWin))
 
-  const script = `
-    Add-Type -AssemblyName System.Runtime.WindowsRuntime
-    $asTask = [System.WindowsRuntimeSystemExtensions].GetMethod('AsTask', [System.Type[]]@([Windows.Foundation.IAsyncOperation\`1].MakeGenericType([Windows.UI.Notifications.UserNotificationListener])))
-    [Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null
-    [Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument, ContentType = WindowsRuntime] | Out-Null
-    $template = @"
-<toast>
-  <visual>
-    <binding template='ToastGeneric'>
-      <text>${safeTitle}</text>
-      <text>${safeBody}</text>
-    </binding>
-  </visual>
-</toast>
-"@
-    $xml = New-Object Windows.Data.Xml.Dom.XmlDocument
-    $xml.LoadXml($template)
-    $toast = New-Object Windows.UI.Notifications.ToastNotification($xml)
-    $notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('Lekhak')
-    $notifier.Show($toast)
-  `.trim()
+  // To make it slide-in, we just rely on CSS animation
+  const safeTitle = title.replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const safeBody = body.replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
-  exec(`powershell -NoProfile -NonInteractive -Command "${script.replace(/\n/g, ' ')}"`, (err) => {
-    if (err) {
-      // Fallback: simpler balloon via msg command
-      exec(`msg %username% /time:10 "${safeTitle}: ${safeBody}"`)
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <style>
+          @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+          }
+          body {
+            margin: 0;
+            padding: 0;
+            background: transparent;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            user-select: none;
+          }
+          a {
+            display: block;
+            text-decoration: none;
+            color: inherit;
+            padding: 18px 20px;
+            background: #ffffff;
+            border: 1px solid #e5e5e5;
+            border-radius: 12px;
+            box-sizing: border-box;
+            height: 100%;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            animation: slideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: transform 0.1s;
+          }
+          a:hover { background: #fafafa; }
+          a:active { transform: scale(0.98); }
+          .title { font-weight: 600; font-size: 14px; margin-bottom: 4px; color: #000; letter-spacing: -0.2px; }
+          .body { font-size: 13px; color: #555; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+          
+          @media (prefers-color-scheme: dark) {
+            a { background: #1a1a1a; border-color: #262626; box-shadow: 0 10px 45px rgba(0,0,0,0.8); }
+            a:hover { background: #222; }
+            .title { color: #fff; }
+            .body { color: #aaa; }
+          }
+        </style>
+      </head>
+      <body>
+        <a href="https://toast-clicked/">
+          <div class="title">${safeTitle}</div>
+          <div class="body">${safeBody}</div>
+        </a>
+      </body>
+    </html>
+  `
+
+  toastWin.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`)
+
+  const timeout = setTimeout(() => {
+    if (!toastWin.isDestroyed()) toastWin.close()
+  }, 10000)
+
+  toastWin.webContents.on('will-navigate', (e, url) => {
+    if (url === 'https://toast-clicked/') {
+      e.preventDefault()
+      clearTimeout(timeout)
+      if (!toastWin.isDestroyed()) toastWin.close()
+      onClick()    
     }
   })
 }

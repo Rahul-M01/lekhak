@@ -90,3 +90,38 @@ body {
 .tiptap.ProseMirror {
   @apply outline-none;
 }
+
+/* React Datepicker overrides for minimalist theme */
+.react-datepicker {
+  @apply font-sans border-0 !border-neutral-200 dark:!border-neutral-800 bg-white dark:bg-[#121212] overflow-hidden rounded-xl shadow-lg pb-1;
+}
+.react-datepicker-wrapper {
+  @apply w-full;
+}
+.react-datepicker__header {
+  @apply border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-[#0a0a0a] pt-3;
+}
+.react-datepicker__current-month, .react-datepicker-time__header, .react-datepicker-year-header {
+  @apply text-black dark:text-white font-semibold;
+}
+.react-datepicker__day-name, .react-datepicker__day, .react-datepicker__time-name {
+  @apply text-neutral-600 dark:text-neutral-400 font-medium;
+}
+.react-datepicker__day:hover, .react-datepicker__month-text:hover {
+  @apply bg-neutral-100 dark:bg-neutral-800 text-black dark:text-white rounded-lg;
+}
+.react-datepicker__day--selected, .react-datepicker__day--keyboard-selected {
+  @apply !bg-black dark:!bg-white !text-white dark:!text-black rounded-lg;
+}
+.react-datepicker__time-container {
+  @apply border-l border-neutral-200 dark:border-neutral-800;
+}
+.react-datepicker__time-container .react-datepicker__time {
+  @apply bg-white dark:bg-[#121212];
+}
+.react-datepicker__time-container .react-datepicker__time .react-datepicker__time-box ul.react-datepicker__time-list li.react-datepicker__time-list-item {
+  @apply text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-black dark:hover:text-white;
+}
+.react-datepicker__time-container .react-datepicker__time .react-datepicker__time-box ul.react-datepicker__time-list li.react-datepicker__time-list-item--selected {
+  @apply !bg-black dark:!bg-white !text-white dark:!text-black font-semibold;
+}

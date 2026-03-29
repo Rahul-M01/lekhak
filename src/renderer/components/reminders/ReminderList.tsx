@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react'
+import DatePicker from 'react-datepicker'
+import 'react-datepicker/dist/react-datepicker.css'
 import { Plus, Trash2, Check, Bell, Clock } from 'lucide-react'
 import type { Reminder, Theme } from '../../types'
 import { format, isPast, isToday, isTomorrow } from 'date-fns'
@@ -8,7 +10,7 @@ interface Props { theme: Theme }
 export default function ReminderList({ theme }: Props) {
   const [reminders, setReminders] = useState<Reminder[]>([])
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ title: '', description: '', remind_at: '', repeat: 'none' as Reminder['repeat'] })
+  const [form, setForm] = useState({ title: '', description: '', date: new Date(), time: '09:00', repeat: 'none' as Reminder['repeat'] })
   const [filter, setFilter] = useState<'upcoming' | 'all' | 'done'>('upcoming')
 
   const card = 'bg-white dark:bg-[#121212] subtle-border border shadow-sm'
@@ -20,10 +22,19 @@ export default function ReminderList({ theme }: Props) {
   }, [])
 
   const submit = async () => {
-    if (!form.title.trim() || !form.remind_at) return
-    const r = await window.api.reminders.create(form)
+    if (!form.title.trim() || !form.date || !form.time) return
+    const [hours, minutes] = form.time.split(':')
+    const dt = new Date(form.date)
+    dt.setHours(Number(hours), Number(minutes), 0, 0)
+    
+    const r = await window.api.reminders.create({
+      title: form.title,
+      description: form.description,
+      remind_at: dt.toISOString(),
+      repeat: form.repeat
+    })
     setReminders(prev => [...prev, r].sort((a, b) => new Date(a.remind_at).getTime() - new Date(b.remind_at).getTime()))
-    setForm({ title: '', description: '', remind_at: '', repeat: 'none' })
+    setForm({ title: '', description: '', date: new Date(), time: '09:00', repeat: 'none' })
     setShowForm(false)
   }
 
@@ -41,7 +52,7 @@ export default function ReminderList({ theme }: Props) {
     const d = new Date(dt)
     if (isToday(d)) return `Today ${format(d, 'h:mm a')}`
     if (isTomorrow(d)) return `Tomorrow ${format(d, 'h:mm a')}`
-    return format(d, 'd MMM yyyy h:mm a')
+    return format(d, 'dd/MM/yyyy h:mm a')
   }
 
   const isOverdue = (r: Reminder) => !r.completed && isPast(new Date(r.remind_at))
@@ -98,13 +109,25 @@ export default function ReminderList({ theme }: Props) {
             value={form.description}
             onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
           />
-          <div className="flex gap-3">
-            <input
-              type="datetime-local"
-              className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-medium border outline-none cursor-pointer focus-ring ${inputStyling}`}
-              value={form.remind_at}
-              onChange={e => setForm(f => ({ ...f, remind_at: e.target.value }))}
-            />
+          <div className="flex gap-3 relative z-50">
+            <div className="flex-[2]">
+              <DatePicker
+                selected={form.date}
+                onChange={(d: Date | null) => setForm(f => ({ ...f, date: d || new Date() }))}
+                dateFormat="dd/MM/yyyy"
+                placeholderText="Pick date..."
+                className={`w-full px-4 py-2.5 rounded-lg text-sm font-medium border outline-none cursor-pointer focus-ring ${inputStyling}`}
+                wrapperClassName="w-full"
+              />
+            </div>
+            <div className="flex-1">
+              <input
+                type="time"
+                value={form.time}
+                onChange={e => setForm(f => ({ ...f, time: e.target.value }))}
+                className={`w-full px-4 py-2.5 rounded-lg text-sm font-medium border outline-none cursor-pointer focus-ring ${inputStyling}`}
+              />
+            </div>
             <select
               value={form.repeat}
               onChange={e => setForm(f => ({ ...f, repeat: e.target.value as any }))}

@@ -51,7 +51,9 @@ function createWindow() {
   return mainWindow
 }
 
-app.setAppUserModelId('com.lekhak.app')
+app.setAppUserModelId(isDev ? process.execPath : 'com.lekhak.app')
+// Force gb-style locale globally to enforce dd/MM/yyyy on native HTML5 inputs 
+app.commandLine.appendSwitch('lang', 'en-GB')
 
 if (!app.requestSingleInstanceLock()) {
   app.quit()
