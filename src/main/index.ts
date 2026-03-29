@@ -19,8 +19,8 @@ function createWindow() {
     frame: false,
     titleBarStyle: 'hidden',
     titleBarOverlay: {
-      color: '#1e1e2e',
-      symbolColor: '#cdd6f4',
+      color: '#0a0a0a',
+      symbolColor: '#ffffff',
       height: 38
     },
     webPreferences: {
@@ -28,7 +28,7 @@ function createWindow() {
       contextIsolation: true,
       nodeIntegration: false
     },
-    backgroundColor: '#1e1e2e',
+    backgroundColor: '#0a0a0a',
     show: false
   })
 
@@ -43,13 +43,14 @@ function createWindow() {
 
   if (isDev) {
     mainWindow.loadURL('http://localhost:5173')
-    mainWindow.webContents.openDevTools()
   } else {
     mainWindow.loadFile(path.join(__dirname, '../../dist/index.html'))
   }
 
   return mainWindow
 }
+
+app.setAppUserModelId('com.lekhak.app')
 
 app.whenReady().then(() => {
   initDatabase()

@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -9,35 +11,61 @@
 }
 
 :root {
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   font-size: 14px;
   line-height: 1.5;
+  color-scheme: light dark;
 }
 
 body {
   overflow: hidden;
   user-select: none;
+  /* Smooth transitions for theme toggle */
+  transition: background-color 0.3s ease, color 0.3s ease;
+  /* Minimalist rendering */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .allow-select {
   user-select: text;
 }
 
-/* Scrollbar */
+/* Scrollbar - Minimal Style */
 ::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.15);
-  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 6px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255,255,255,0.25);
+  background: rgba(0, 0, 0, 0.3);
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.12);
+  background: rgba(255, 255, 255, 0.12);
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Custom UI Utilities for High Contrast Minimalist Design */
+@layer utilities {
+  .subtle-border {
+    @apply border-neutral-200 dark:border-neutral-800;
+  }
+  .subtle-bg {
+    @apply bg-neutral-100 dark:bg-[#151515];
+  }
+  .focus-ring {
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-black dark:focus-visible:ring-white transition-shadow;
+  }
+  .card-hover {
+    @apply transition-all duration-300 hover:-translate-y-[2px] hover:shadow-lg dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.5)];
+  }
 }

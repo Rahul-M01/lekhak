@@ -30,7 +30,7 @@ export interface Reminder {
   created_at: string
 }
 
-export type View = 'todos' | 'notes' | 'reminders'
+export type View = 'dashboard' | 'todos' | 'notes' | 'reminders'
 export type Theme = 'dark' | 'light'
 
 declare global {

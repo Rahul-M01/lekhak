@@ -1,65 +1,64 @@
 # Lekhak
 
-A personal productivity desktop app for Windows. Todos, notes, and reminders — all in one place, stored locally.
+Lekhak is a modern, privacy-first personal productivity desktop application. It integrates tasks, rich notes, and scheduled reminders into a unified, beautifully designed aesthetic tailored for Windows. 
 
-![Lekhak screenshot placeholder](docs/screenshot.png)
+All your data is stored locally via SQLite—no accounts, no cloud sync, and absolute privacy.
 
-## Features
+## Core Features
 
-- **To-do list** — add tasks with priority levels and due dates, filter by status
-- **Notes** — write and autosave freeform notes, pin favourites, full-text search
-- **Reminders** — schedule notifications with optional daily/weekly/monthly repeat
-- **System tray** — app stays alive in the background, close button hides to tray
-- **Dark & light theme** — toggle from the sidebar
-- All data is stored in a local SQLite database — no account, no cloud, no tracking
+- **Prioritized Tasks**: Manage your to-do list with low, medium, and high priority tags, calendar due dates, and status filters.
+- **Rich Notes**: A minimalist note-taking environment featuring auto-save, pinning, and instant full-text search.
+- **Scheduled Reminders**: Set up one-off or recurring (daily/weekly/monthly) background notifications with native OS alerts.
+- **System Tray Integration**: Lekhak runs quietly in the background. Closing the app minimizes it to the tray, ensuring you never miss a scheduled reminder.
+- **Adaptive UI**: A premium, high-contrast monochrome design system with seamless dark and light mode support.
 
-## Stack
+## Technology Stack
 
-- [Electron](https://electronjs.org) + [Vite](https://vitejs.dev)
-- [React](https://react.dev) + TypeScript
-- [Tailwind CSS](https://tailwindcss.com)
-- [better-sqlite3](https://github.com/WiseLibs/better-sqlite3) for local persistence
-- [date-fns](https://date-fns.org) for date handling
+- **Framework**: [Electron](https://electronjs.org) + [React 19](https://react.dev)
+- **Tooling**: [Vite](https://vitejs.dev) + TypeScript
+- **Styling**: [Tailwind CSS](https://tailwindcss.com) + Lucide Icons
+- **Database**: [better-sqlite3](https://github.com/WiseLibs/better-sqlite3)
+- **Utilities**: `date-fns` for precise local time handling
 
-## Getting started
+## Development Guide
 
-**Prerequisites:** Node.js 18+, npm
+### Prerequisites
+- Node.js 18+
+- npm
 
-```bash
-git clone https://github.com/your-username/lekhak.git
-cd lekhak
-npm install
-npm run dev
-```
+### Installation & Setup
 
-The app opens automatically. Data is saved to your OS user-data directory (`%APPDATA%\lekhak` on Windows).
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/your-username/lekhak.git
+   cd lekhak
+   ```
 
-## Build
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
+3. Start the development environment:
+   ```bash
+   npm run dev
+   ```
+
+### Application Data
+
+By default, the internal SQLite database (`lekhak.db`) and user preferences are automatically stored in the standard OS user-data directory:
+- **Windows**: `%APPDATA%\lekhak`
+
+Because the app is entirely offline, you can easily back up, restore, or migrate your data by moving this single `.db` file.
+
+## Packaging
+
+To compile the application and build a production-ready Windows installer:
 ```bash
 npm run build
 ```
-
-Produces a Windows installer under `release/`.
-
-## Project layout
-
-```
-src/
-  main/         # Electron main process (window, IPC, SQLite, tray, reminders)
-  preload/      # Context bridge — exposes a typed API to the renderer
-  renderer/     # React app
-    components/
-      todos/
-      notes/
-      reminders/
-    types/
-```
-
-## Data
-
-The SQLite database lives at `%APPDATA%\lekhak\lekhak.db`. You can back it up or copy it between machines freely.
+The compiled executable and installer will be generated in the `release/` directory.
 
 ## License
 
-MIT
+This project is licensed under the [MIT License](LICENSE).

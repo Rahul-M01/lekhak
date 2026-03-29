@@ -10,8 +10,12 @@ export default defineConfig({
     electron([
       {
         entry: 'src/main/index.ts',
+        onstart(args) {
+          args.startup()
+        },
         vite: {
           build: {
+            sourcemap: true,
             outDir: 'dist-electron/main',
             rollupOptions: {
               external: ['better-sqlite3', 'electron-store', 'electron']
@@ -21,8 +25,12 @@ export default defineConfig({
       },
       {
         entry: 'src/preload/index.ts',
+        onstart(args) {
+          args.reload()
+        },
         vite: {
           build: {
+            sourcemap: true,
             outDir: 'dist-electron/preload',
             rollupOptions: {
               external: ['electron']

@@ -1,43 +1,68 @@
-import { BrowserWindow, Notification } from 'electron'
+import { BrowserWindow } from 'electron'
+import { exec } from 'child_process'
 import { getDb } from './database'
 
 export function initReminderScheduler(win: BrowserWindow) {
-  setInterval(() => {
-    checkReminders(win)
-  }, 30000) // check every 30 seconds
-
-  // Also check on startup
+  setInterval(() => checkReminders(win), 30000)
   setTimeout(() => checkReminders(win), 3000)
+}
+
+function showToast(title: string, body: string, onClick: () => void) {
+  // Use PowerShell Windows Runtime toast — works reliably in dev and prod
+  const safeTitle = title.replace(/'/g, '').replace(/"/g, '')
+  const safeBody = body.replace(/'/g, '').replace(/"/g, '')
+
+  const script = `
+    Add-Type -AssemblyName System.Runtime.WindowsRuntime
+    $asTask = [System.WindowsRuntimeSystemExtensions].GetMethod('AsTask', [System.Type[]]@([Windows.Foundation.IAsyncOperation\`1].MakeGenericType([Windows.UI.Notifications.UserNotificationListener])))
+    [Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null
+    [Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument, ContentType = WindowsRuntime] | Out-Null
+    $template = @"
+<toast>
+  <visual>
+    <binding template='ToastGeneric'>
+      <text>${safeTitle}</text>
+      <text>${safeBody}</text>
+    </binding>
+  </visual>
+</toast>
+"@
+    $xml = New-Object Windows.Data.Xml.Dom.XmlDocument
+    $xml.LoadXml($template)
+    $toast = New-Object Windows.UI.Notifications.ToastNotification($xml)
+    $notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('Lekhak')
+    $notifier.Show($toast)
+  `.trim()
+
+  exec(`powershell -NoProfile -NonInteractive -Command "${script.replace(/\n/g, ' ')}"`, (err) => {
+    if (err) {
+      // Fallback: simpler balloon via msg command
+      exec(`msg %username% /time:10 "${safeTitle}: ${safeBody}"`)
+    }
+  })
 }
 
 function checkReminders(win: BrowserWindow) {
   const db = getDb()
-  const now = new Date().toISOString()
+  const now = Date.now()
 
-  const dueReminders = db.prepare(`
-    SELECT * FROM reminders
-    WHERE remind_at <= ? AND notified = 0 AND completed = 0
-  `).all(now)
+  const pending = db.prepare(
+    'SELECT * FROM reminders WHERE notified = 0 AND completed = 0'
+  ).all()
 
-  for (const reminder of dueReminders as any[]) {
-    // Show Windows notification
-    const notif = new Notification({
-      title: `Reminder: ${reminder.title}`,
-      body: reminder.description || 'Tap to open Lekhak',
-      silent: false
-    })
+  const due = (pending as any[]).filter(
+    r => new Date(r.remind_at).getTime() <= now
+  )
 
-    notif.on('click', () => {
-      win.show()
-      win.focus()
-    })
+  for (const reminder of due) {
+    showToast(
+      `Reminder: ${reminder.title}`,
+      reminder.description || 'Click to open Lekhak',
+      () => { win.show(); win.focus() }
+    )
 
-    notif.show()
-
-    // Mark as notified
     db.prepare('UPDATE reminders SET notified = 1 WHERE id = ?').run(reminder.id)
 
-    // Handle repeat
     if (reminder.repeat !== 'none') {
       scheduleRepeat(db, reminder)
     }
@@ -63,6 +88,7 @@ function scheduleRepeat(db: any, reminder: any) {
       return
   }
 
-  db.prepare('UPDATE reminders SET remind_at = ?, notified = 0 WHERE id = ?')
-    .run(next.toISOString(), reminder.id)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const local = `${next.getFullYear()}-${pad(next.getMonth() + 1)}-${pad(next.getDate())}T${pad(next.getHours())}:${pad(next.getMinutes())}`
+  db.prepare('UPDATE reminders SET remind_at = ?, notified = 0 WHERE id = ?').run(local, reminder.id)
 }
