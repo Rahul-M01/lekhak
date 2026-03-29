@@ -61,6 +61,7 @@ declare global {
         minimize(): void
         maximize(): void
         close(): void
+        openNote(id: number): void
       }
     }
   }

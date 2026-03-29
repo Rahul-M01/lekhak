@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
-import { Plus, Pin, Trash2, Search, X } from 'lucide-react'
+import { Plus, Pin, Trash2, Search } from 'lucide-react'
+import NoteEditor from './NoteEditor'
 import type { Note, Theme } from '../../types'
 
 interface Props { theme: Theme }
@@ -17,14 +18,26 @@ export default function NotesList({ theme }: Props) {
 
   const sidebar = 'bg-neutral-50 dark:bg-[#0a0a0a] subtle-border border-r'
   const inputStyling = 'bg-white dark:bg-[#121212] text-black dark:text-white placeholder-neutral-400 dark:placeholder-neutral-500 subtle-border'
-  const editor = 'bg-white dark:bg-[#121212]'
   const textMuted = 'text-neutral-500 dark:text-neutral-400'
 
   useEffect(() => {
-    window.api.notes.getAll().then(ns => {
-      setNotes(ns)
-      if (ns.length > 0 && !selected) setSelected(ns[0])
-    })
+    const loadNotes = () => {
+      window.api.notes.getAll().then(ns => {
+        setNotes(ns)
+        // Only set selected if we don't already have one, or if ours was deleted
+        setSelected(prev => {
+           if (!prev && ns.length > 0) return ns[0]
+           const stillExists = ns.find(n => n.id === prev?.id)
+           if (prev && !stillExists) return null
+           return prev
+        })
+      })
+    }
+    loadNotes()
+    
+    // Auto-refresh when clicking back to the main window
+    window.addEventListener('focus', loadNotes)
+    return () => window.removeEventListener('focus', loadNotes)
   }, [])
 
   const createNote = async () => {
@@ -115,7 +128,7 @@ export default function NotesList({ theme }: Props) {
                 </div>
               </div>
               <p className={`text-[13px] leading-snug truncate ${textMuted}`}>
-                {note.content || 'Empty note'}
+                {note.content ? note.content.replace(/<[^>]+>/g, '') : 'Empty note'}
               </p>
               <p className={`text-[11px] font-medium mt-2 ${selected?.id === note.id ? 'text-neutral-500 dark:text-neutral-400' : 'text-neutral-400 dark:text-neutral-500'}`}>
                 {new Date(note.updated_at).toLocaleDateString('en-GB')}
@@ -127,34 +140,11 @@ export default function NotesList({ theme }: Props) {
 
       {/* Editor */}
       {selected ? (
-        <div className={`flex-1 flex flex-col ${editor}`}>
-          <div className="px-10 py-6 subtle-border border-b flex items-start gap-4">
-            <div className="flex-1">
-              <input
-                className="w-full text-2xl font-bold bg-transparent outline-none allow-select text-black dark:text-white placeholder-neutral-300 dark:placeholder-neutral-700 tracking-tight"
-                value={selected.title}
-                onChange={e => autoSave(selected, { title: e.target.value })}
-                placeholder="Note title..."
-              />
-              <p className={`text-xs font-medium mt-1.5 ${textMuted}`}>
-                Last edited {new Date(selected.updated_at).toLocaleString('en-GB')}
-              </p>
-            </div>
-            <button
-              onClick={() => setSelected(null)}
-              className="p-2 rounded-lg transition-colors text-neutral-400 hover:bg-neutral-100 dark:hover:bg-[#1a1a1a] hover:text-black dark:hover:text-white focus-ring"
-            >
-              <X size={18} />
-            </button>
-          </div>
-          <textarea
-            className={`flex-1 w-full px-10 py-8 bg-transparent outline-none resize-none text-[15px] leading-relaxed allow-select text-black dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-600`}
-            value={selected.content}
-            onChange={e => autoSave(selected, { content: e.target.value })}
-            placeholder="Start writing..."
-            spellCheck="false"
-          />
-        </div>
+        <NoteEditor 
+          note={selected} 
+          onChange={(changes) => autoSave(selected, changes)}
+          onClose={() => setSelected(null)} 
+        />
       ) : (
         <div className={`flex-1 flex items-center justify-center bg-white dark:bg-[#121212] text-neutral-400 dark:text-neutral-500`}>
           <div className="text-center">

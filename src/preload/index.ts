@@ -30,6 +30,7 @@ const api = {
     minimize: () => ipcRenderer.send('window-minimize'),
     maximize: () => ipcRenderer.send('window-maximize'),
     close: () => ipcRenderer.send('window-close'),
+    openNote: (id: number) => ipcRenderer.send('window-open-note', id),
   }
 }
 

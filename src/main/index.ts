@@ -41,8 +41,9 @@ function createWindow() {
     mainWindow?.hide()
   })
 
-  if (isDev) {
-    mainWindow.loadURL('http://localhost:5173')
+  const devUrl = process.env.VITE_DEV_SERVER_URL || (isDev ? 'http://localhost:5173' : '')
+  if (devUrl) {
+    mainWindow.loadURL(devUrl)
   } else {
     mainWindow.loadFile(path.join(__dirname, '../../dist/index.html'))
   }
@@ -70,12 +71,58 @@ if (!app.requestSingleInstanceLock()) {
     registerIpcHandlers()
     initReminderScheduler(win)
 
-    ipcMain.on('window-minimize', () => mainWindow?.minimize())
-    ipcMain.on('window-maximize', () => {
-      if (mainWindow?.isMaximized()) mainWindow.unmaximize()
-      else mainWindow?.maximize()
+    ipcMain.on('window-minimize', (e) => {
+      const win = BrowserWindow.fromWebContents(e.sender)
+      if (win === mainWindow) {
+        win?.minimize()
+      } else {
+        win?.minimize()
+      }
     })
-    ipcMain.on('window-close', () => mainWindow?.hide())
+    ipcMain.on('window-maximize', (e) => {
+      const win = BrowserWindow.fromWebContents(e.sender)
+      if (win?.isMaximized()) win.unmaximize()
+      else win?.maximize()
+    })
+    ipcMain.on('window-close', (e) => {
+      const win = BrowserWindow.fromWebContents(e.sender)
+      if (win === mainWindow) {
+        win?.hide()
+      } else {
+        win?.close()
+      }
+    })
+    
+    ipcMain.on('window-open-note', (_e, id: number) => {
+      const noteWin = new BrowserWindow({
+        width: 800,
+        height: 600,
+        minWidth: 400,
+        minHeight: 400,
+        frame: false,
+        titleBarStyle: 'hidden',
+        titleBarOverlay: {
+          color: '#0a0a0a',
+          symbolColor: '#ffffff',
+          height: 38
+        },
+        webPreferences: {
+          preload: path.join(__dirname, '../preload/index.js'),
+          contextIsolation: true,
+          nodeIntegration: false
+        },
+        backgroundColor: '#0a0a0a',
+        show: false
+      })
+
+      noteWin.once('ready-to-show', () => noteWin.show())
+      const devUrl = process.env.VITE_DEV_SERVER_URL || (isDev ? 'http://localhost:5173' : '')
+      if (devUrl) {
+        noteWin.loadURL(`${devUrl}?noteId=${id}`)
+      } else {
+        noteWin.loadFile(path.join(__dirname, '../../dist/index.html'), { query: { noteId: id.toString() } })
+      }
+    })
   })
 }
 

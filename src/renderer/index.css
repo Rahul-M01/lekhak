@@ -69,3 +69,24 @@ body {
     @apply transition-all duration-300 hover:-translate-y-[2px] hover:shadow-lg dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.5)];
   }
 }
+
+.titlebar-drag-region {
+  -webkit-app-region: drag;
+}
+
+.titlebar-drag-region * {
+  -webkit-app-region: no-drag;
+}
+
+/* Tiptap Placeholder */
+.tiptap.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  @apply text-neutral-400 dark:text-neutral-600;
+}
+
+.tiptap.ProseMirror {
+  @apply outline-none;
+}

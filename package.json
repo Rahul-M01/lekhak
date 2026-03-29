@@ -11,6 +11,10 @@
     "postinstall": "electron-rebuild -f -w better-sqlite3 || true"
   },
   "dependencies": {
+    "@tiptap/extension-placeholder": "^3.21.0",
+    "@tiptap/extension-underline": "^3.21.0",
+    "@tiptap/react": "^3.21.0",
+    "@tiptap/starter-kit": "^3.21.0",
     "better-sqlite3": "^9.4.3",
     "date-fns": "^3.6.0",
     "electron-store": "^8.2.0",
@@ -20,6 +24,7 @@
   },
   "devDependencies": {
     "@electron/rebuild": "^4.0.3",
+    "@tailwindcss/typography": "^0.5.19",
     "@types/better-sqlite3": "^7.6.9",
     "@types/node": "^20.12.7",
     "@types/react": "^18.3.1",
