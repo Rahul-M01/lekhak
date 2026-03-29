@@ -1,0 +1,27 @@
+appId: com.lekhak.app
+productName: Lekhak
+directories:
+  output: release
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: public/icon.ico
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+
+files:
+  - dist/**/*
+  - dist-electron/**/*
+
+extraResources:
+  - from: node_modules/better-sqlite3/build/Release/
+    to: better-sqlite3
+    filter:
+      - "*.node"
+
+asar: true
